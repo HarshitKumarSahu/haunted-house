@@ -3,6 +3,10 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { Timer } from 'three/addons/misc/Timer.js'
 import GUI from 'lil-gui'
 
+
+
+
+
 /**
  * Base
  */
@@ -15,15 +19,65 @@ const canvas = document.querySelector('canvas.webgl')
 // Scene
 const scene = new THREE.Scene()
 
+
+
+
 /**
  * House
  */
-// Temporary sphere
-const sphere = new THREE.Mesh(
-    new THREE.SphereGeometry(1, 32, 32),
-    new THREE.MeshStandardMaterial({ roughness: 0.7 })
+// Floor
+const floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(32,32),
+    new THREE.MeshStandardMaterial()
 )
-scene.add(sphere)
+floor.rotation.x = - Math.PI / 2
+scene.add(floor)
+
+// House Container
+const house = new THREE.Group()
+scene.add(house)
+
+// Walls
+const wallsDimensions = {
+    height: 2.5,
+    width: 4,
+    depth: 4,
+}
+const walls = new THREE.Mesh(
+    new THREE.BoxGeometry(wallsDimensions.width, wallsDimensions.height, wallsDimensions.depth),
+    new THREE.MeshStandardMaterial()
+)
+walls.position.y += wallsDimensions.height / 2
+house.add(walls)
+
+// Roof
+const roofDimensions = {
+    radius: 3.5,
+    height: 1.5,
+    segments: 4,
+}
+const roof = new THREE.Mesh(
+    new THREE.ConeGeometry(roofDimensions.radius, roofDimensions.height, roofDimensions.segments),
+    new THREE.MeshStandardMaterial()
+)
+roof.position.y += wallsDimensions.height + (roofDimensions.height/2)
+roof.rotation.y = Math.PI / 4
+house.add(roof)
+
+// Door
+const doorDimensions = {
+    width: 2.2,
+    height: 2.2,
+}
+const door = new THREE.Mesh(
+    new THREE.PlaneGeometry(doorDimensions.width, doorDimensions.height),
+    new THREE.MeshStandardMaterial({
+        color: "red"
+    })
+)
+door.position.set(0, doorDimensions.height/2, wallsDimensions.width/2 + 0.0001)
+house.add(door)
+
 
 /**
  * Lights
@@ -36,6 +90,9 @@ scene.add(ambientLight)
 const directionalLight = new THREE.DirectionalLight('#ffffff', 1.5)
 directionalLight.position.set(3, 2, -8)
 scene.add(directionalLight)
+
+
+
 
 /**
  * Sizes
@@ -60,6 +117,9 @@ window.addEventListener('resize', () =>
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
 })
 
+
+
+
 /**
  * Camera
  */
@@ -74,6 +134,10 @@ scene.add(camera)
 const controls = new OrbitControls(camera, canvas)
 controls.enableDamping = true
 
+
+
+
+
 /**
  * Renderer
  */
@@ -82,6 +146,10 @@ const renderer = new THREE.WebGLRenderer({
 })
 renderer.setSize(sizes.width, sizes.height)
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+
+
+
+
 
 /**
  * Animate
