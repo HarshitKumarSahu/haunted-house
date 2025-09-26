@@ -23,12 +23,24 @@ const scene = new THREE.Scene()
 
 
 /**
+ * Textures
+ */
+const textureLoader = new THREE.TextureLoader()
+
+// Floor 
+const floorAlpha = textureLoader.load("/floor/alpha.webp")
+
+
+/**
  * House
  */
 // Floor
 const floor = new THREE.Mesh(
-    new THREE.PlaneGeometry(32,32),
-    new THREE.MeshStandardMaterial()
+    new THREE.PlaneGeometry(20,20),
+    new THREE.MeshStandardMaterial({
+        alphaMap: floorAlpha,
+        transparent: true
+    })
 )
 floor.rotation.x = - Math.PI / 2
 scene.add(floor)
