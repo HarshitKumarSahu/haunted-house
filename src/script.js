@@ -3,7 +3,8 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { Timer } from 'three/addons/misc/Timer.js'
 import GUI from 'lil-gui'
 import { Sky } from 'three/addons/objects/Sky.js';
-
+import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
+import { DRACOLoader } from "three/addons/loaders/DRACOLoader.js";
 
 
 
@@ -467,6 +468,191 @@ scene.fog = new THREE.FogExp2("#04343F", 0.125)
 
 
 /**
+ * Audio
+ */
+// Audio setup
+const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+let audioSource = null;
+let audioBuffer = null;
+
+// Load and play audio
+async function loadAudio() {
+    try {
+        const response = await fetch('./sounds/haunted.mp3'); // Replace with your audio file path
+        const arrayBuffer = await response.arrayBuffer();
+        audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+    } catch (error) {
+        console.error('Error loading audio:', error);
+    }
+}
+
+// Audio analysis
+const analyser = audioContext.createAnalyser();
+analyser.fftSize = 256; // Size of frequency data (lower for faster analysis)
+const bufferLength = analyser.frequencyBinCount; // Number of frequency bins
+const frequencyData = new Uint8Array(bufferLength); // Array to hold frequency data
+
+// Connect audio source to analyser
+function connectAnalyser() {
+    if (audioSource) {
+        audioSource.connect(analyser);
+        analyser.connect(audioContext.destination);
+    }
+}
+
+// Update play sound to include analyser
+document.getElementById('plySound').addEventListener('click', () => {
+    if (audioContext.state === 'suspended') {
+        audioContext.resume();
+    }
+    if (audioBuffer) {
+        audioSource = audioContext.createBufferSource();
+        audioSource.buffer = audioBuffer;
+        connectAnalyser(); // Connect to analyser
+        audioSource.start();
+        audioSource.loop = true
+    }
+});
+
+// Load audio on page load
+loadAudio();
+
+
+/**
+ * Ghost Model
+*/
+/**
+ * Ghost Model
+ */
+const gltfLoader = new GLTFLoader();
+const dracoLoader = new DRACOLoader();
+dracoLoader.setDecoderPath("./draco/");
+gltfLoader.setDRACOLoader(dracoLoader);
+
+gltfLoader.load(
+    "./model/ghost.glb",
+    function (gltf) {
+        const model = gltf.scene;
+        let meshes = [];
+
+        // Traverse the model to collect meshes
+        gltf.scene.traverse(function (child) {
+            if (child.isMesh) {
+                child.userData.originalMaterial = child.material;
+                meshes.push(child);
+            }
+        });
+
+        // Scale and position the model
+        const scale = 1.75;
+        gltf.scene.scale.set(scale, scale, scale);
+        gltf.scene.position.z = 3;
+
+        // Assign modelPosition for GUI
+        const modelPosition = gltf.scene;
+
+        // Add model to scene
+        scene.add(gltf.scene);
+
+        // Add GUI controls for model position
+        if (gui) { // Ensure gui is defined
+            gui.add(modelPosition.position, "z")
+                .min(1)
+                .max(4)
+                .step(0.001)
+                .name("Ghost Z Position");
+        } else {
+            console.warn("GUI is not defined. Skipping GUI setup.");
+        }
+    },
+    undefined,
+    function (e) {
+        console.error("Model loading error:", e);
+    }
+);
+// const gltfLoader = new GLTFLoader();
+// const dracoLoader = new DRACOLoader();
+// dracoLoader.setDecoderPath("./draco/");
+// gltfLoader.setDRACOLoader(dracoLoader);
+
+// let modelPosition = null
+
+// gltfLoader.load(
+//     "./model/ghost.glb",
+//     function (gltf) {
+//         const model = gltf.scene;
+//         let meshes = [];
+
+//         // console.log("GLTF Animations:", gltf.animations);
+//         // gltf.animations.forEach((clip, index) => {
+//         //     console.log(`Animation ${index} Tracks:`, clip.tracks);
+//         //     console.log(`Animation ${index} targets:`, clip.tracks.map(track => track.name));
+//         // });
+
+//         gltf.scene.traverse(function (child) {
+//             if (child.isMesh) {
+//                 child.userData.originalMaterial = child.material;
+
+//                 // const box = new THREE.Box3().setFromObject(child);
+//                 // const center = box.getCenter(new THREE.Vector3());
+
+//                 // child.position.sub(center);
+//                 // child.position.x = 0.15;
+//                 // child.scale.set(0.0001,0.0001,0.0001);
+
+//                 // child.material = that.material;
+
+//                 meshes.push(child);
+
+//                 // console.log("Mesh:", child.name, "Material:", child.material.name);
+//                 // console.log("Mesh has skeleton:", !!child.skeleton, "Skeleton:", child.skeleton);
+//                 // console.log("Mesh has morph targets:", !!child.morphTargetInfluences, "Morph targets:", child.morphTargetInfluences);
+//                 // console.log("Geometry attributes:", Object.keys(child.geometry.attributes));
+//                 // // Log UV attributes specifically
+//                 // console.log("UV attributes available:");
+//                 // if (child.geometry.attributes.uv) console.log(" - uv:", child.geometry.attributes.uv);
+//                 // if (child.geometry.attributes.uv1) console.log(" - uv1:", child.geometry.attributes.uv1);
+//                 // if (child.geometry.attributes.uv2) console.log(" - uv2:", child.geometry.attributes.uv2);
+//                 // if (child.geometry.attributes.uv3) console.log(" - uv3:", child.geometry.attributes.uv3);
+//             }
+//         });
+
+//         // let mixer = null;
+//         // if (gltf.animations && gltf.animations.length > 0) {
+//         //     mixer = new THREE.AnimationMixer(gltf.scene);
+//         //     gltf.animations.forEach((clip, index) => {
+//         //         console.log(`Playing animation ${index}: ${clip.name}`);
+//         //         const action = mixer.clipAction(clip);
+//         //         action.setLoop(THREE.LoopRepeat);
+//         //         action.timeScale = 10;
+//         //         action.play();
+
+//         //     });
+//         // } else {
+//         //     console.warn("No animations found in the model.");
+//         // }
+
+//         const x = 1.75
+
+//         gltf.scene.scale.set(x,x,x)
+//         gltf.scene.position.z = 3
+
+//         modelPosition = gltf.scene
+
+//         scene.add(gltf.scene);
+//     },
+//     undefined,
+//     function (e) {
+//         console.error("Model loading error:", e);
+//     }
+// );
+
+// if (modelPosition) {
+//     gui.add(modelPosition.position, "z").min(1).max(4).step(0.25);
+// }
+
+
+/**
  * Animate
  */
 const timer = new Timer()
@@ -492,6 +678,25 @@ const tick = () =>
     ghost3.position.x = Math.cos(ghost3Angle) * 6
     ghost3.position.z = Math.sin(ghost3Angle) * 6
     ghost3.position.y = Math.sin(ghost3Angle) * Math.sin(ghost3Angle * 2.34) * Math.sin(ghost3Angle * 3.45)
+
+
+    // Get frequency data
+    analyser.getByteFrequencyData(frequencyData);
+
+    // Calculate average amplitude for low frequencies (e.g., first 10 bins ~0-200 Hz)
+    let sum = 0;
+    const lowFreqBins = 10; // Adjust to target specific frequency range
+    for (let i = 0; i < lowFreqBins; i++) {
+        sum += frequencyData[i];
+    }
+    const average = sum / lowFreqBins;
+
+    // Map frequency amplitude (0-255) to light intensity (e.g., 0-5)
+    const intensity = (average / 255) * 5; // Scale to desired max intensity
+    doorLight.intensity = intensity;
+    ghost1.intensity = intensity * Math.random() + Math.sin(intensity)
+    ghost2.intensity = intensity * Math.random() + Math.atan(intensity)
+    ghost3.intensity = intensity * Math.random() + Math.cosh(intensity)
 
 
     // Update controls
